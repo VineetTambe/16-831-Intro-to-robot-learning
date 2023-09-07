@@ -85,7 +85,6 @@ class ReplayBuffer(object):
             self.rews[random_indices],
             self.next_obs[random_indices],
             self.terminals[random_indices],
-            self.terminals[random_indices],
         )
 
     def sample_recent_data(self, batch_size=1):
