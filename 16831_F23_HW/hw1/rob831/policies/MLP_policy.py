@@ -67,6 +67,8 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
                 self.learning_rate,
             )
 
+        self.loss_function = nn.MSELoss()
+
     ##################################
 
     def save(self, filepath):
@@ -85,7 +87,19 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
 
     # update/train this policy
     def update(self, observations, actions, **kwargs):
-        raise NotImplementedError
+        # TODO ask TA -> but what is the loss? Using just L2 loss for now
+        # this is just copy of the previous fnc
+
+        loss = self.loss_function(self.get_action(observations), actions)
+        loss.backkward()
+
+        self.optimizer.step()
+
+        return {
+            # You can add extra logging information here, but keep this line
+            "Training Loss": ptu.to_numpy(loss),
+        }
+        # raise NotImplementedError
 
     # This function defines the forward pass of the network.
     # You can return anything you want, but you should be able to differentiate
@@ -93,9 +107,13 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
     # return more flexible objects, such as a
     # `torch.distributions.Distribution` object. It's up to you!
     def forward(self, observation: torch.FloatTensor) -> Any:
-        # Have to return an action
+        # TODO verify this with someone TA?
 
-        raise NotImplementedError
+        # Have to return an action
+        if self.discrete:
+            return self.logits_na(observation)
+        return self.mean_net(observation)
+        # raise NotImplementedError
 
 
 #####################################################
@@ -105,13 +123,18 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
 class MLPPolicySL(MLPPolicy):
     def __init__(self, ac_dim, ob_dim, n_layers, size, **kwargs):
         super().__init__(ac_dim, ob_dim, n_layers, size, **kwargs)
-        self.loss = nn.MSELoss()
+        self.loss_fn = nn.MSELoss()
 
     def update(self, observations, actions, adv_n=None, acs_labels_na=None, qvals=None):
         # TODO: update the policy and return the loss
         # Figure out mlp policy update
 
-        loss = self.loss(self.forward(observations), actions)
+        loss = self.loss_fn(self.forward(observations), actions)
+
+        # backprop the weights
+        loss.backward()
+        self.optimizer.step()
+        # self.optimizer.zero_grad()
 
         return {
             # You can add extra logging information here, but keep this line
