@@ -94,6 +94,7 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         loss.backkward()
 
         self.optimizer.step()
+        self.optimizer.zero_grad()
 
         return {
             # You can add extra logging information here, but keep this line
@@ -151,9 +152,10 @@ class MLPPolicySL(MLPPolicy):
 
         loss = self.loss_fn(super().forward(ptu.from_numpy(observations)), ptu.from_numpy(actions))
         # backprop the weights
+        self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        # # self.optimizer.zero_grad()
+
 
         return {
             # You can add extra logging information here, but keep this line

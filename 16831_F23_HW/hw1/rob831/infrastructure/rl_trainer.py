@@ -99,6 +99,9 @@ class RL_Trainer(object):
         self.total_envsteps = 0
         self.start_time = time.time()
 
+
+        print("Number of iterations  = %i" % n_iter)
+
         for itr in range(n_iter):
             print("\n\n********** Iteration %i ************" % itr)
 

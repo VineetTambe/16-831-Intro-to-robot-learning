@@ -31,7 +31,7 @@ def sample_trajectory(
         # use the most recent ob to decide what to do
         obs.append(ob)
         ac = policy.get_action(
-            np.asarray(obs)
+            np.asarray(ob)
         )  # HINT: query the policy's get_action function [OK]
         ac = ac[0]
         acs.append(ac)
