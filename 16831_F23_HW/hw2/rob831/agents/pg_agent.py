@@ -73,12 +73,24 @@ class PGAgent(BaseAgent):
 
         if not self.reward_to_go:
             # use the whole traj for each timestep
-            raise NotImplementedError
+            # raise NotImplementedError
+            total_discounted_cumsum = np.array(
+                [self._discounted_return(rewards) for rewards in rewards_list]
+            )
 
         # Case 2: reward-to-go PG
         # Estimate Q^{pi}(s_t, a_t) by the discounted sum of rewards starting from t
         else:
-            raise NotImplementedError
+            total_discounted_cumsum = np.array(
+                [self._discounted_cumsum(rewards) for rewards in rewards_list]
+            )
+
+        # n = np.array([len(rew) for rew in rewards_list])
+
+        # TODO -> Ask TA if we are supposed to do the gamma**n * nn_baseline update here
+
+        q_values = total_discounted_cumsum
+        # raise NotImplementedError
 
         return q_values  # return an array
 
@@ -97,9 +109,13 @@ class PGAgent(BaseAgent):
             ## TODO: values were trained with standardized q_values, so ensure
             ## that the predictions have the same mean and standard deviation as
             ## the current batch of q_values
-
-            raise NotImplementedError
-            values = TODO
+            # Ask TA if this is the intended implementation
+            # assert np.mean(values_normalized) == np.mean(q_values)
+            # assert np.std(values_normalized) == np.std(q_values)
+            # raise NotImplemente/dError
+            values = np.mean(q_values) + (
+                values_normalized - np.mean(values_normalized)
+            ) / np.std(values_normalized) * np.std(q_values)
 
             if self.gae_lambda is not None:
                 ## append a dummy T+1 value for simpler recursive calculation
@@ -121,7 +137,20 @@ class PGAgent(BaseAgent):
                     ## 0 otherwise.
                     ## HINT 2: self.gae_lambda is the lambda value in the
                     ## GAE formula
-                    raise NotImplementedError
+                    # raise NotImplementedError
+
+                    if terminals[i] == 0:
+                        # NOT a terminal state
+                        # pass
+                        advantages[i] = (
+                            rewards[i] + self.gamma * values[i + 1] - values[i]
+                        ) + advantages[i + 1] * self.gamma * self.gae_lambda
+
+                    else:
+                        # terminal state
+                        advantages[i] = (
+                            rewards[i] + self.gamma * values[i + 1] - values[i]
+                        )
 
                 # remove dummy advantage
                 advantages = advantages[:-1]
@@ -168,7 +197,12 @@ class PGAgent(BaseAgent):
         """
 
         # TODO: create discounted_returns
-        raise NotImplementedError
+        # raise NotImplementedError
+
+        t_prime = np.arange(len(rewards))
+        rew = np.asarray(rewards)
+
+        discounted_returns = np.sum((self.gamma**t_prime) * rew)
 
         return discounted_returns
 
@@ -182,6 +216,13 @@ class PGAgent(BaseAgent):
         # TODO: create `discounted_cumsums`
         # HINT: it is possible to write a vectorized solution, but a solution
         # using a for loop is also fine
-        raise NotImplementedError
+        # raise NotImplementedError
+
+        discounted_cumsums = np.zeros_like(rewards)
+        T = len(rewards)
+        for t in range(T):
+            rew = np.asarray(rewards[t:])
+            t_prime_t = np.arange(T - t)
+            discounted_cumsums[t] = np.sum((self.gamma**t_prime_t) * rew)
 
         return discounted_cumsums

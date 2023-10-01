@@ -109,7 +109,7 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         action_distribution = self(observation)
         action = action_distribution.sample()  # don't bother with rsample
         return ptu.to_numpy(action)
-        
+
     # update/train this policy
     def update(self, observations, actions, **kwargs):
         # this raise should be left alone as it is a base class for PG
@@ -177,6 +177,13 @@ class MLPPolicyPG(MLPPolicy):
             ## HINT2: You will need to convert the targets into a tensor using
             ## ptu.from_numpy before using it in the loss
             raise NotImplementedError
+
+            loss = self.loss_fn(super().forward(ptu.from_numpy(observations)), ptu.from_numpy(actions))
+            # backprop the weights
+            self.optimizer.zero_grad()
+            
+            loss.backward()
+            self.optimizer.step()
 
         train_log = {
             "Training Loss": ptu.to_numpy(policy_loss),
