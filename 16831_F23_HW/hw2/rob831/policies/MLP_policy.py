@@ -25,7 +25,7 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         learning_rate=1e-4,
         training=True,
         nn_baseline=False,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
 

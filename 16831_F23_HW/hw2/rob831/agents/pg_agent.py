@@ -53,9 +53,7 @@ class PGAgent(BaseAgent):
         train_log = self.actor.update(
             observations,
             actions,
-            self.estimate_advantage(
-                self, observations, rewards_list, q_vals, terminals
-            ),
+            self.estimate_advantage(observations, rewards_list, q_vals, terminals),
             q_vals,
         )
 
@@ -65,7 +63,6 @@ class PGAgent(BaseAgent):
         """
         Monte Carlo estimation of the Q function.
         """
-
         # TODO: return the estimated qvals based on the given rewards, using
         # either the full trajectory-based estimator or the reward-to-go
         # estimator
@@ -84,16 +81,27 @@ class PGAgent(BaseAgent):
         if not self.reward_to_go:
             # use the whole traj for each timestep
             # raise NotImplementedError
-            total_discounted_cumsum = np.array(
-                [self._discounted_return(rewards) for rewards in rewards_list]
-            )
+            # total_discounted_cumsum = np.array(
+            #     [
+            #         self._discounted_return(rewards)
+            #         for rewards in rewards_list
+            #         for _ in range(len(rewards))
+            #     ]
+            # ).flatten()
+
+            total_discounted_cumsum = np.concatenate(
+                [
+                    np.ones((len(rewards))) * self._discounted_return(rewards)
+                    for rewards in rewards_list
+                ]
+            ).flatten()
 
         # Case 2: reward-to-go PG
         # Estimate Q^{pi}(s_t, a_t) by the discounted sum of rewards starting from t
         else:
-            total_discounted_cumsum = np.array(
+            total_discounted_cumsum = np.concatenate(
                 [self._discounted_cumsum(rewards) for rewards in rewards_list]
-            )
+            ).flatten()
 
         # n = np.array([len(rew) for rew in rewards_list])
 
