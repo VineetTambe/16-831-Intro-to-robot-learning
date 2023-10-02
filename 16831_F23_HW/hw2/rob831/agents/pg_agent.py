@@ -47,7 +47,17 @@ class PGAgent(BaseAgent):
         # HINT2: look at the MLPPolicyPG class for how to update the policy
         # and obtain a train_log
 
-        raise NotImplementedError
+        # raise NotImplementedError
+        q_vals = self.calculate_q_vals(rewards_list)
+
+        train_log = self.actor.update(
+            observations,
+            actions,
+            self.estimate_advantage(
+                self, observations, rewards_list, q_vals, terminals
+            ),
+            q_vals,
+        )
 
         return train_log
 
@@ -158,7 +168,12 @@ class PGAgent(BaseAgent):
             else:
                 ## TODO: compute advantage estimates using q_values, and values as baselines
                 # raise NotImplementedError
-                advantages = TODO
+                next_state_values = values[1:]
+                next_state_values = np.append(next_state_values, [0])
+                advantages = q_values + self.gamma * next_state_values - values
+
+                advantages = q_values - values
+                self.gamma ** np.arange(len(q_values))
 
         # Else, just set the advantage to [Q]
         else:
@@ -169,8 +184,8 @@ class PGAgent(BaseAgent):
             ## TODO: standardize the advantages to have a mean of zero
             ## and a standard deviation of one
 
-            raise NotImplementedError
-            advantages = TODO
+            # raise NotImplementedError
+            advantages = normalize(advantages, 0, 1.0)
 
         return advantages
 
