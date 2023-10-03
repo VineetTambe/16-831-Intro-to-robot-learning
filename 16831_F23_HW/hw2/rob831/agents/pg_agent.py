@@ -127,13 +127,15 @@ class PGAgent(BaseAgent):
             ## TODO: values were trained with standardized q_values, so ensure
             ## that the predictions have the same mean and standard deviation as
             ## the current batch of q_values
-            # Ask TA if this is the intended implementation
-            # assert np.mean(values_normalized) == np.mean(q_values)
-            # assert np.std(values_normalized) == np.std(q_values)
             # raise NotImplemente/dError
-            values = np.mean(q_values) + (
-                values_normalized - np.mean(values_normalized)
-            ) / np.std(values_normalized) * np.std(q_values)
+
+            # values = np.mean(q_values) + (
+            #     values_normalized - np.mean(values_normalized)
+            # ) / np.std(values_normalized) * np.std(q_values)
+
+            values = unnormalize(values_normalized, np.mean(q_values), np.std(q_values))
+            # def unnormalize(data, mean, std):
+            #     return data * std + mean
 
             if self.gae_lambda is not None:
                 ## append a dummy T+1 value for simpler recursive calculation
@@ -160,15 +162,17 @@ class PGAgent(BaseAgent):
                     if terminals[i] == 0:
                         # NOT a terminal state
                         # pass
+                        # advantages[i] = (
+                        #     rewards[i] + self.gamma * values[i + 1] - values[i]
+                        # ) + advantages[i + 1] * self.gamma * self.gae_lambda
+
                         advantages[i] = (
                             rewards[i] + self.gamma * values[i + 1] - values[i]
-                        ) + advantages[i + 1] * self.gamma * self.gae_lambda
+                        ) + self.gamma * self.gae_lambda * advantages[i + 1]
 
                     else:
                         # terminal state
-                        advantages[i] = (
-                            rewards[i] + self.gamma * values[i + 1] - values[i]
-                        )
+                        advantages[i] = rewards[i] - values[i]
 
                 # remove dummy advantage
                 advantages = advantages[:-1]
@@ -176,12 +180,12 @@ class PGAgent(BaseAgent):
             else:
                 ## TODO: compute advantage estimates using q_values, and values as baselines
                 # raise NotImplementedError
-                next_state_values = values[1:]
-                next_state_values = np.append(next_state_values, [0])
-                advantages = q_values + self.gamma * next_state_values - values
+                # next_state_values = values[1:]
+                # next_state_values = np.append(next_state_values, [0])
+                # advantages = q_values + self.gamma * next_state_values - values
 
                 advantages = q_values - values
-                self.gamma ** np.arange(len(q_values))
+                # self.gamma ** np.arange(len(q_values))
 
         # Else, just set the advantage to [Q]
         else:
@@ -193,7 +197,7 @@ class PGAgent(BaseAgent):
             ## and a standard deviation of one
 
             # raise NotImplementedError
-            advantages = normalize(advantages, 0, 1.0)
+            advantages = normalize(advantages, np.mean(advantages), np.std(advantages))
 
         return advantages
 

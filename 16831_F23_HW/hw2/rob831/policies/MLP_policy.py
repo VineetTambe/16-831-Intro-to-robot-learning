@@ -190,7 +190,9 @@ class MLPPolicyPG(MLPPolicy):
             # raise NotImplementedError
 
             self.baseline_optimizer.zero_grad()
-            targets = ptu.from_numpy(normalize(q_values))
+            targets = ptu.from_numpy(
+                normalize(q_values, np.mean(q_values), np.std(q_values))
+            )
             baseline_predictions = self.baseline(observations).squeeze()
             baseline_loss = self.baseline_loss(baseline_predictions, targets)
             baseline_loss.backward()
