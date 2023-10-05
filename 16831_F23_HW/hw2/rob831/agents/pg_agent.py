@@ -133,9 +133,20 @@ class PGAgent(BaseAgent):
             #     values_normalized - np.mean(values_normalized)
             # ) / np.std(values_normalized) * np.std(q_values)
 
-            values = unnormalize(values_normalized, np.mean(q_values), np.std(q_values))
-            # def unnormalize(data, mean, std):
-            #     return data * std + mean
+            # values = unnormalize(
+            #     normalize(
+            #         values_normalized,
+            #         np.mean(values_normalized),
+            #         np.std(values_normalized),
+            #     ),
+            #     np.mean(q_values),
+            #     np.std(q_values),
+            # )
+
+            values = (
+                values_normalized
+                - np.mean(values_normalized) / np.std(values_normalized)
+            ) * np.std(q_values) + np.mean(q_values)
 
             if self.gae_lambda is not None:
                 ## append a dummy T+1 value for simpler recursive calculation
@@ -161,11 +172,6 @@ class PGAgent(BaseAgent):
 
                     if terminals[i] == 0:
                         # NOT a terminal state
-                        # pass
-                        # advantages[i] = (
-                        #     rewards[i] + self.gamma * values[i + 1] - values[i]
-                        # ) + advantages[i + 1] * self.gamma * self.gae_lambda
-
                         advantages[i] = (
                             rewards[i] + self.gamma * values[i + 1] - values[i]
                         ) + self.gamma * self.gae_lambda * advantages[i + 1]
@@ -185,8 +191,6 @@ class PGAgent(BaseAgent):
                 # advantages = q_values + self.gamma * next_state_values - values
 
                 advantages = q_values - values
-                # self.gamma ** np.arange(len(q_values))
-
         # Else, just set the advantage to [Q]
         else:
             advantages = q_values.copy()

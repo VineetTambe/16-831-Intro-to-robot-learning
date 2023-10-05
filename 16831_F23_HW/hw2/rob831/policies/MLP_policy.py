@@ -166,8 +166,8 @@ class MLPPolicyPG(MLPPolicy):
         # HINT4: use self.optimizer to optimize the loss. Remember to
         # 'zero_grad' first
 
-        policy_loss = -torch.sum(
-            self.forward(observations).log_prob(actions) * advantages.detach()
+        policy_loss = -torch.mean(
+            self.forward(observations).log_prob(actions) * advantages
         )
 
         # backprop the weights
@@ -194,7 +194,6 @@ class MLPPolicyPG(MLPPolicy):
                 normalize(q_values, np.mean(q_values), np.std(q_values))
             )
             baseline_predictions = self.baseline(observations).squeeze()
-            # baseline_predictions = self.baseline(observations)
             baseline_loss = self.baseline_loss(baseline_predictions, targets)
             baseline_loss.backward()
             self.baseline_optimizer.step()
