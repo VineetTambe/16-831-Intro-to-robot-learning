@@ -1,0 +1,1 @@
+All commands to get the data in `run_logs` are provided in the submitted .pdf 
