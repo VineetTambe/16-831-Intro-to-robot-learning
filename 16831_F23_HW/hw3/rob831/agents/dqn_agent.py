@@ -97,13 +97,13 @@ class DQNAgent(object):
             and self.t % self.learning_freq == 0
             and self.replay_buffer.can_sample(self.batch_size)
         ):
-            # TODO fill in the call to the update function using the appropriate tensors
-            log = self.critic.update(TODO)
+            # TODO fill in the call to the update function using the appropriate tensors Done
+            log = self.critic.update(ob_no, ac_na, next_ob_no, re_n, terminal_n)
 
             # TODO update the target network periodically
             # HINT: your critic already has this functionality implemented
             if self.num_param_updates % self.target_update_freq == 0:
-                TODO
+                self.critic.update_target_network()
 
             self.num_param_updates += 1
 
