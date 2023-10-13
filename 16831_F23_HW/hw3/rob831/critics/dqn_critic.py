@@ -62,6 +62,9 @@ class DQNCritic(BaseCritic):
         terminal_n = ptu.from_numpy(terminal_n)
 
         qa_t_values = self.q_net(ob_no)
+        # print(qa_t_values.shape)
+        # print(ac_na.shape)
+        # raise NotImplementedError
         q_t_values = torch.gather(qa_t_values, 1, ac_na.unsqueeze(1)).squeeze(1)
 
         # TODO compute the Q-values from the target network
@@ -73,12 +76,13 @@ class DQNCritic(BaseCritic):
             # is being updated, but the Q-value for this action is obtained from the
             # target Q-network. Please review Lecture 8 for more details,
             # and page 4 of https://arxiv.org/pdf/1509.06461.pdf is also a good reference.
-            TODO
 
-            # q_tp1, _ = self.q_net(qa_tp1_values.argmax(dim=1)).max(dim=1)
+            # using q_net which the online network to get best actions
+            actions = self.q_net(next_ob_no).argmax(dim=1)
+            # actions = qa_tp1_values.argmax(dim=1)
 
-            # q_tp1 = q_net(next_ob_no, argmax(qa_tp1_values))
-            # pass
+            # using q_net_target to evaluate the best actions
+            q_tp1 = torch.gather(qa_tp1_values, 1, actions.unsqueeze(1)).squeeze(1)
 
         else:
             q_tp1, _ = qa_tp1_values.max(dim=1)

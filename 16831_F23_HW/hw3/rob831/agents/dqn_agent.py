@@ -53,15 +53,26 @@ class DQNAgent(object):
         # HINT: the replay buffer used here is `MemoryOptimizedReplayBuffer`
         # in dqn_utils.py
 
-        # self.replay_buffer_idx = None
+        # self.replay_buffer_idx =
+        self.replay_buffer_idx = self.replay_buffer.store_frame(self.last_obs)
 
         eps = self.exploration.value(self.t)
 
         # TODO use epsilon greedy exploration when selecting action
         # HINT: take random action
         # with probability eps (see np.random.random())
-        # OR if your current step number (see self.t) is less that self.learning_starts
-        perform_random_action = eps < self.learning_starts
+        # OR if your current step number (see self.t) is less than self.learning_starts
+
+        # print(f"{eps=}")
+        # print(f"{self.learning_starts=}")
+        # print(f"{self.t=}")
+
+        perform_random_action = (np.random.random() < eps) or (
+            self.t < self.learning_starts
+        )
+
+        # perform_random_action = eps < self.learning_starts
+
         if perform_random_action:
             action = self.env.action_space.sample()
         else:
@@ -82,7 +93,8 @@ class DQNAgent(object):
         # TODO store the result of taking this action into the replay buffer
         # HINT1: see your replay buffer's `store_effect` function
         # HINT2: one of the arguments you'll need to pass in is self.replay_buffer_idx from above
-        self.replay_buffer_idx = self.replay_buffer.store_frame(self.last_obs)
+
+        # ask TA where should this be moved ?!?
         self.replay_buffer.store_effect(self.replay_buffer_idx, action, reward, done)
 
         # TODO if taking this step resulted in done, reset the env (and the latest observation)
