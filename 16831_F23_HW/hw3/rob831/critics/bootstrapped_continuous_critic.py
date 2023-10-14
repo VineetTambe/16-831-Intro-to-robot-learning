@@ -90,4 +90,42 @@ class BootstrappedContinuousCritic(nn.Module, BaseCritic):
         # HINT: make sure to squeeze the output of the critic_network to ensure
         #       that its dimensions match the reward
 
+        ob_no = ptu.from_numpy(ob_no)
+        ac_na = ptu.from_numpy(ac_na)
+        next_ob_no = ptu.from_numpy(next_ob_no)
+        reward_n = ptu.from_numpy(reward_n)
+        terminal_n = ptu.from_numpy(terminal_n)
+
+        for _ in range(self.num_target_updates):
+            V_s_prime = self.critic_network(next_ob_no).squeeze() * (1.0 - terminal_n)
+            target = reward_n + self.gamma * V_s_prime.detach()
+            # ---------------------------------------------------------------
+            self.optimizer.zero_grad()
+            loses = 0
+            for _ in range(self.num_grad_steps_per_target_update):
+                loss = self.loss(self.critic_network(ob_no).squeeze(), target)
+                loses += loss
+            loses.backward()
+
+            self.optimizer.step()
+            # ---------------------------------------------------------------
+            # self.optimizer.zero_grad()
+            # for _ in range(self.num_grad_steps_per_target_update):
+            #     loss = self.loss(self.critic_network(ob_no).squeeze(), target)
+            #     loss.backward()
+            #     self.optimizer.step()
+            # ---------------------------------------------------------------
+            # self.optimizer.zero_grad()
+            # cumulative_loss = 0  # Initialize the cumulative loss
+
+            # for _ in range(self.num_grad_steps_per_target_update):
+            #     # Compute the loss for this gradient step
+            #     loss = self.loss(self.critic_network(ob_no).squeeze(), target)
+            #     cumulative_loss += loss  # Accumulate the loss
+
+            # # cumulative_loss /= self.num_grad_steps_per_target_update  # Average the loss
+            # cumulative_loss.backward()  # Backpropagate the averaged loss
+            # self.optimizer.step()
+            # ---------------------------------------------------------------
+
         return loss.item()
