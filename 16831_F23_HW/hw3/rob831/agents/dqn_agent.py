@@ -75,6 +75,7 @@ class DQNAgent(object):
 
         if perform_random_action:
             action = self.env.action_space.sample()
+            # _, action = self.actor.sample_action()
         else:
             # HINT: Your actor will take in multiple previous observations ("frames") in order
             # to deal with the partial observability of the environment. Get the most recent
@@ -114,7 +115,7 @@ class DQNAgent(object):
             and self.t % self.learning_freq == 0
             and self.replay_buffer.can_sample(self.batch_size)
         ):
-            # TODO fill in the call to the update function using the appropriate tensors Done
+            # TODO fill in the call to the update function using the appropriate tensors 
             log = self.critic.update(ob_no, ac_na, next_ob_no, re_n, terminal_n)
 
             # TODO update the target network periodically
