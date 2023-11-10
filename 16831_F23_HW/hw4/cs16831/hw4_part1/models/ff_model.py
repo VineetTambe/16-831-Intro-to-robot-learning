@@ -86,11 +86,12 @@ class FFModel(nn.Module, BaseModel):
         # TODO(Q1) compute delta_pred_normalized and next_obs_pred
         # Hint: as described in the PDF, the output of the network is the
         # *normalized change* in state, i.e. normalized(s_t+1 - s_t).
-        delta_pred_normalized = ptu.to_numpy(
-            self.delta_network(concatenated_input)
+        delta_pred_normalized = self.delta_network(concatenated_input)
+        delta_pred_normalized_numpy = ptu.to_numpy(
+            delta_pred_normalized
         )  # TODO(Q1)
         next_obs_pred = obs_unnormalized + unnormalize(
-            delta_pred_normalized, delta_mean, delta_std
+            delta_pred_normalized_numpy, delta_mean, delta_std
         )  # TODO(Q1)
         return next_obs_pred, delta_pred_normalized
 
@@ -153,7 +154,7 @@ class FFModel(nn.Module, BaseModel):
         preds = self.forward(
             observations,
             actions,
-            data_statistics["obs_mean"],
+            data_statistics["obs_mean"],    
             data_statistics["obs_std"],
             data_statistics["acs_mean"],
             data_statistics["acs_std"],
@@ -162,7 +163,7 @@ class FFModel(nn.Module, BaseModel):
         )[1]
         
         target = ptu.from_numpy(target)
-        preds = ptu.from_numpy(preds)
+        # preds = ptu.from_numpy(preds)
 
         loss = self.loss(preds, target)
         # loss = torch.autograd.Variable(loss, requires_grad = True)
