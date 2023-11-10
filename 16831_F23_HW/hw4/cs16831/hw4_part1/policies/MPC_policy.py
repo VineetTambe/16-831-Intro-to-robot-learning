@@ -2,7 +2,6 @@ import numpy as np
 
 from .base_policy import BasePolicy
 
-
 class MPCPolicy(BasePolicy):
 
     def __init__(self,
@@ -53,6 +52,30 @@ class MPCPolicy(BasePolicy):
             # TODO(Q1) uniformly sample trajectories and return an array of
             # dimensions (num_sequences, horizon, self.ac_dim) in the range
             # [self.low, self.high]
+
+            # random_action_sequences = 
+            # generate a numpy array of shape (num_sequences, horizon, self.ac_dim) in the range [self.low, self.high]
+            random_action_sequences = np.random.uniform(self.low, self.high, (num_sequences, horizon, self.ac_dim))
+
+            # random_model_idx = np.random.randint(0, len(self.dyn_models))
+
+            # n_traj = utils.sample_n_trajectories(
+            #     env = self.env,
+            #     policy = self.dyn_models[random_model_idx],
+            #     ntraj= num_sequences,
+            #     max_path_length = horizon,
+            #     render = False,
+            # )
+            # random_action_sequences = np.array([traj['action'] for traj in n_traj])
+            # random_action_sequences = []
+
+            # for _ in range(num_sequences):
+            #     traj = []
+            #     for _ in range(horizon):
+            #         traj.append(self.env.action_space.sample())
+            #     random_action_sequences.append(np.array(traj))
+            # random_action_sequences = np.array(random_action_sequences)
+
             return random_action_sequences
         elif self.sample_strategy == 'cem':
             # TODO(Q5): Implement action selection using CEM.
