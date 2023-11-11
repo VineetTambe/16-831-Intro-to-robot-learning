@@ -53,28 +53,7 @@ class MPCPolicy(BasePolicy):
             # dimensions (num_sequences, horizon, self.ac_dim) in the range
             # [self.low, self.high]
 
-            # random_action_sequences = 
-            # generate a numpy array of shape (num_sequences, horizon, self.ac_dim) in the range [self.low, self.high]
             random_action_sequences = np.random.uniform(self.low, self.high, (num_sequences, horizon, self.ac_dim))
-
-            # random_model_idx = np.random.randint(0, len(self.dyn_models))
-
-            # n_traj = utils.sample_n_trajectories(
-            #     env = self.env,
-            #     policy = self.dyn_models[random_model_idx],
-            #     ntraj= num_sequences,
-            #     max_path_length = horizon,
-            #     render = False,
-            # )
-            # random_action_sequences = np.array([traj['action'] for traj in n_traj])
-            # random_action_sequences = []
-
-            # for _ in range(num_sequences):
-            #     traj = []
-            #     for _ in range(horizon):
-            #         traj.append(self.env.action_space.sample())
-            #     random_action_sequences.append(np.array(traj))
-            # random_action_sequences = np.array(random_action_sequences)
 
             return random_action_sequences
         elif self.sample_strategy == 'cem':
@@ -106,10 +85,11 @@ class MPCPolicy(BasePolicy):
         #
         # Then, return the mean predictions across all ensembles.
         # Hint: the return value should be an array of shape (N,)
-        for model in self.dyn_models: 
-            pass
-
-        return TODO
+        mean_preds = []
+        for model in self.dyn_models:
+            # What does mean prediction mean? - do I return np.mean(mean_preds)?
+            mean_preds.append(np.mean(self.calculate_sum_of_rewards(obs, candidate_action_sequences, model)))
+        return np.asarray(mean_preds)
 
     def get_action(self, obs):
         if self.data_statistics is None:
@@ -126,13 +106,12 @@ class MPCPolicy(BasePolicy):
             predicted_rewards = self.evaluate_candidate_sequences(candidate_action_sequences, obs)
 
             # pick the action sequence and return the 1st element of that sequence
-            best_action_sequence = None  # TODO (Q2)
-            action_to_take = None  # TODO (Q2)
-            return action_to_take[None]  # Unsqueeze the first index
+            best_action_sequence = candidate_action_sequences[np.argmax(predicted_rewards)] #None  # TODO (Q2)
+            action_to_take = best_action_sequence[0] #None  # TODO (Q2)
+            return action_to_take[np.newaxis, :] # Unsqueeze the first index
 
     def calculate_sum_of_rewards(self, obs, candidate_action_sequences, model):
         """
-
         :param obs: numpy array with the current observation. Shape [D_obs]
         :param candidate_action_sequences: numpy array with the candidate action
         sequences. Shape [N, H, D_action] where
@@ -155,4 +134,34 @@ class MPCPolicy(BasePolicy):
         # Hint: Remember that the model can process observations and actions
         #       in batch, which can be much faster than looping through each
         #       action sequence.
+        N, H, D_action = candidate_action_sequences.shape
+        D_obs = obs.shape[0]
+        
+        stacked_obs = np.tile(obs, (N, 1))
+        stacked_obs = np.reshape(stacked_obs, (N, 1, D_obs))
+        
+        prev_obs = np.zeros((N, H, D_obs))
+        prev_obs[:,0,:] = stacked_obs[: , 0, :]
+        predicted_obs = np.zeros((N, H, D_obs))
+        rewards = np.zeros((N, H))
+
+
+        for t in range(H):
+            action = candidate_action_sequences[:, t, :]
+            
+            predicted_obs[:, t, :] = model.get_prediction(prev_obs[:,t,:], action, data_statistics=self.data_statistics)
+            if t < H-1:
+                prev_obs[:,t+1,:] = predicted_obs[:,t,:]
+
+            # self.data_statistics["obs_mean"] = np.mean(prev_obs[: t, :], axis = 0)
+            # self.data_statistics["obs_std"] = np.std(prev_obs[:, t, :], axis = 0)
+            # self.data_statistics["acs_mean"] = np.mean(action, axis=0)
+            # self.data_statistics["acs_std"] = np.std(action, axis=0)
+            # self.data_statistics["delta_mean"] = np.mean(predicted_obs[: , t, :] - prev_obs[:, t, :], axis = 0)
+            # self.data_statistics["delta_std"] = np.std(predicted_obs[: , t, :] - prev_obs[:, t, :], axis = 0)
+            
+            rewards[:, t] = self.env.get_reward(predicted_obs[:, t, :].reshape(N,D_obs), action.reshape(N,D_action))[0]
+            
+        sum_of_rewards = np.sum(rewards, axis=1)
+
         return sum_of_rewards
