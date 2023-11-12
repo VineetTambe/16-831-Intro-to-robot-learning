@@ -61,6 +61,9 @@ class MPCPolicy(BasePolicy):
             # Begin with randomly selected actions, then refine the sampling distribution
             # iteratively as described in Section 3.3, "Iterative Random-Shooting with Refinement" of
             # https://arxiv.org/pdf/1909.11652.pdf 
+            cem_action_mean = None
+            cem_action_std = None
+            elite_action_sequences = None
             for i in range(self.cem_iterations):
                 # - Sample candidate sequences from a Gaussian with the current 
                 #   elite mean and variance
@@ -70,12 +73,22 @@ class MPCPolicy(BasePolicy):
                 #     (Hint: what existing function can we use to compute rewards for
                 #      our candidate sequences in order to rank them?)
                 # - Update the elite mean and variance
-                pass
+                # pass
+                action_sequences = None
+                if i == 0:
+                    # First iteration 
+                    action_sequences = np.random.uniform(self.low, self.high, (num_sequences, horizon, self.ac_dim))
+                else:
+                    action_sequences = np.random.normal(cem_action_mean, cem_action_std, (num_sequences, horizon, self.ac_dim))
 
+                elite_action_sequences = action_sequences[np.argsort(self.evaluate_candidate_sequences(action_sequences, obs))[-self.cem_num_elites:]]
+                cem_action_mean = np.mean(elite_action_sequences, axis=0)
+                cem_action_std = np.std(elite_action_sequences, axis=0)
+                
             # TODO(Q5): Set `cem_action` to the appropriate action chosen by CEM
-            cem_action = None
+            cem_action = elite_action_sequences
 
-            return cem_action[None]
+            return cem_action
         else:
             raise Exception(f"Invalid sample_strategy: {self.sample_strategy}")
 
@@ -88,8 +101,8 @@ class MPCPolicy(BasePolicy):
         mean_preds = []
         for model in self.dyn_models:
             # What does mean prediction mean? - do I return np.mean(mean_preds)?
-            mean_preds.append(np.mean(self.calculate_sum_of_rewards(obs, candidate_action_sequences, model)))
-        return np.asarray(mean_preds)
+            mean_preds.append(self.calculate_sum_of_rewards(obs, candidate_action_sequences, model))
+        return np.mean(np.asarray(mean_preds), axis=0)
 
     def get_action(self, obs):
         if self.data_statistics is None:
@@ -103,10 +116,10 @@ class MPCPolicy(BasePolicy):
             # CEM: only a single action sequence to consider; return the first action
             return candidate_action_sequences[0][0][None]
         else:
-            predicted_rewards = self.evaluate_candidate_sequences(candidate_action_sequences, obs)
+            mean_predicted_rewards = self.evaluate_candidate_sequences(candidate_action_sequences, obs)
 
             # pick the action sequence and return the 1st element of that sequence
-            best_action_sequence = candidate_action_sequences[np.argmax(predicted_rewards)] #None  # TODO (Q2)
+            best_action_sequence = candidate_action_sequences[np.argmax(mean_predicted_rewards)] #None  # TODO (Q2)
             action_to_take = best_action_sequence[0] #None  # TODO (Q2)
             return action_to_take[np.newaxis, :] # Unsqueeze the first index
 
@@ -148,7 +161,7 @@ class MPCPolicy(BasePolicy):
 
         for t in range(H):
             action = candidate_action_sequences[:, t, :]
-            
+
             predicted_obs[:, t, :] = model.get_prediction(prev_obs[:,t,:], action, data_statistics=self.data_statistics)
             if t < H-1:
                 prev_obs[:,t+1,:] = predicted_obs[:,t,:]
