@@ -439,7 +439,7 @@ class MemoryOptimizedReplayBuffer(object):
         act_batch      = self.action[idxes]
         rew_batch      = self.reward[idxes]
         next_obs_batch = np.concatenate([self._encode_observation(idx + 1)[None] for idx in idxes], 0)
-        done_mask      = np.array([1.0 if self.done[idx] else 0.0 for idx in idxes], dtype=np.float32)
+        done_mask      = np.array([1.0 if self.done[idx] else 0.0 for idx in idxes], dtype=float)
 
         return obs_batch, act_batch, rew_batch, next_obs_batch, done_mask
 
@@ -536,10 +536,10 @@ class MemoryOptimizedReplayBuffer(object):
             Index at which the frame is stored. To be used for `store_effect` later.
         """
         if self.obs is None:
-            self.obs      = np.empty([self.size] + list(frame.shape), dtype=np.float32 if self.float_obs else np.uint8)
-            self.action   = np.empty([self.size],                     dtype=np.int32)
-            self.reward   = np.empty([self.size],                     dtype=np.float32)
-            self.done     = np.empty([self.size],                     dtype=np.bool)
+            self.obs      = np.empty([self.size] + list(frame.shape), dtype=float if self.float_obs else int)
+            self.action   = np.empty([self.size],                     dtype=int)
+            self.reward   = np.empty([self.size],                     dtype=float)
+            self.done     = np.empty([self.size],                     dtype=bool)
         self.obs[self.next_idx] = frame
 
         ret = self.next_idx
