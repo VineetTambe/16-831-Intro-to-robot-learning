@@ -52,13 +52,12 @@ class RNDModel(nn.Module, BaseExplorationModel):
         pred = self.f(ob_no).detach()
         pred_hat = self.f_hat(ob_no)
 
-        pred_error = torch.norm(pred - pred_hat)
+        # pred_error = torch.norm(pred - pred_hat)
+        pred_error = (pred - pred_hat) ** 2
         return pred_error
 
     def forward_np(self, ob_no):
         ob_no = ptu.from_numpy(ob_no)
-        # ob_no = ob_no.to(ptu.device)
-        # self.to(ptu.device)
         error = self(ob_no)
         return ptu.to_numpy(error)
 
@@ -67,11 +66,13 @@ class RNDModel(nn.Module, BaseExplorationModel):
         # Hint: Take the mean prediction error across the batch
         # pass
 
-        ob_no = ptu.from_numpy(ob_no)
-        pred = self.f(ob_no).detach()
-        pred_hat = self.f_hat(ob_no)
+        # ob_no = ptu.from_numpy(ob_no)
+        # pred = self.f(ob_no).detach()
+        # pred_hat = self.f_hat(ob_no)
 
-        loss = torch.mean((pred - pred_hat)**2)
+        # loss = torch.mean((pred - pred_hat)**2/)
+
+        loss = torch.mean(self.forward(ob_no))
         
         self.optimizer_spec.constructor(self.f_hat.parameters(), **self.optimizer_spec.optim_kwargs)
         self.optimizer_spec.constructor.zero_grad()
