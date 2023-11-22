@@ -5,13 +5,14 @@ from torch import nn
 import torch
 
 def init_method_1(model):
-    model.weight.data.uniform_()
-    model.bias.data.uniform_()
+    if isinstance(model, nn.Linear):
+        model.weight.data.uniform_()
+        model.bias.data.uniform_()
 
 def init_method_2(model):
-    model.weight.data.normal_()
-    model.bias.data.normal_()
-
+    if isinstance(model, nn.Linear):
+        model.weight.data.normal_()
+        model.bias.data.normal_()
 
 class RNDModel(nn.Module, BaseExplorationModel):
     def __init__(self, hparams, optimizer_spec, **kwargs):
@@ -32,7 +33,9 @@ class RNDModel(nn.Module, BaseExplorationModel):
                 n_layers=self.n_layers,
                 size=self.size,
             )
+        self.f.apply(init_method_1)
         self.f.to(ptu.device)
+
 
         self.f_hat = ptu.build_mlp(
                 input_size=self.ob_dim,
@@ -40,8 +43,18 @@ class RNDModel(nn.Module, BaseExplorationModel):
                 n_layers=self.n_layers,
                 size=self.size,
             )
+        self.f_hat.apply(init_method_2)
+        
+        self.optimizer = self.optimizer_spec.constructor(self.f_hat.parameters(), **self.optimizer_spec.optim_kwargs)
+
         self.f_hat.to(ptu.device)
 
+
+        # print(f'{self.ob_dim=}')
+        # print(f'{self.output_size=}')
+        # print(f'{self.n_layers=}')
+        # print(f'{self.size=}')
+        
 
     def forward(self, ob_no):
         # <TODO>: Get the prediction error for ob_no
@@ -74,11 +87,10 @@ class RNDModel(nn.Module, BaseExplorationModel):
 
         loss = torch.mean(self.forward(ob_no))
         
-        self.optimizer_spec.constructor(self.f_hat.parameters(), **self.optimizer_spec.optim_kwargs)
-        self.optimizer_spec.constructor.zero_grad()
+        self.optimizer.zero_grad()
         
         loss.backward()
         
-        self.optimizer_spec.constructor.step()
+        self.optimizer.step()
         
         return loss.item()
